@@ -1,0 +1,7 @@
+{
+  "name": "amf.js",
+  "version": "0.1",
+  "dependencies": {
+    "qunit": "1.11.0"
+  }
+}
