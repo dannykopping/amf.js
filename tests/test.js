@@ -1,3 +1,8 @@
+var guy = {name: 'Danny'};
+var bro = {name: 'Brad'};
+var siblings = [guy, bro];
+guy.siblings = siblings;
+
 var tests = [
   // strings
   ['empty string', ''],
@@ -38,7 +43,7 @@ var tests = [
   // plain objects
   ['empty object', {} ],
   ['keyed object', { foo: 'bar', 'foo bar': 'baz' } ],
-  ['refs object', { foo: _ = { a: 12 }, bar: _ } ]
+  ['circular object', guy ]
 ];
 
 for (var i = 0; i < tests.length; i++) (function (i) {
@@ -48,6 +53,11 @@ for (var i = 0; i < tests.length; i++) (function (i) {
 
   test(description, function () {
     console.log(i, description, value);
+
+//    if(i == tests.length - 1) {
+//    var s = serialize(value);
+//      return;
+//    }
     ok(roundtrip(value));
   });
 })(i);
@@ -63,15 +73,28 @@ var roundtrip = function (data) {
 };
 
 var serialize = function (data) {
-  var serializer = new AMFSerializer(amf.AMF3);
-  return serializer.writeValue(data);
+  var o = new amf._BufferOutputStream();
+  new amf.AMF0Encoder(o, true).encode(data);
+
+  var buf = new ArrayBuffer(o.size);
+  o.writeTo(buf);
+  return buf;
 };
 
 var deserialize = function (data) {
-  var deserializer = new AMFDeserializer(data);
-  return deserializer.readValue(amf.AMF3);
+  var input = new amf._BufferInputStream(data);
+
+  var data = new amf.AMF0Decoder(input).decode();
+  return data;
 };
 
+/**
+ * NodeJS fanciness to convert any object to string
+ *
+ * @param obj
+ * @param opts
+ * @returns {*}
+ */
 function inspect(obj, opts) {
   // default options
   var ctx = {

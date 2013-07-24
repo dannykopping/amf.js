@@ -1,0 +1,11 @@
+{
+  "require": {
+    "silexlabs/amfphp": "v2.1.1"
+  },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/silexlabs/amfphp-2.0.git"
+    }
+  ]
+}

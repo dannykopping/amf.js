@@ -5,8 +5,20 @@
     <title>QUnit Main Test Suite</title>
     <link rel="stylesheet" href="../vendor/qunit/qunit/qunit.css">
     <script src="../vendor/qunit/qunit/qunit.js"></script>
-    <script src="../lib/amf.js"></script>
+    <script src="../vendor/hashmap/hashmap.js"></script>
+    <!--<script src="../lib/amf.js"></script>-->
+    <script src="../lib/alt.js"></script>
     <script src="test.js"></script>
+
+    <!--<script type="text/javascript">
+        var map = new HashMap();
+
+        var obj = {name:'Danny'};
+        obj.self = obj;
+        map.set('dk', obj);
+        console.log(map.count());
+        console.log(map.get('dk'));
+    </script>-->
 </head>
 <body>
 <div id="qunit"></div>
