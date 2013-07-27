@@ -1,16 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title></title>
     <script src="../vendor/jquery/jquery.min.js"></script>
     <!--<script src="../lib/amf.js"></script>-->
     <!--<script src="../lib/binary.js"></script>-->
+    <script src="../vendor/hashmap/hashmap.js"></script>
+    <script src="../lib/inspect.js"></script>
     <script src="../lib/alt.js"></script>
+    <script src="../lib/amf.js"></script>
+
 
     <script type="text/javascript">
         (function() {
 
-            var url = "http://localhost.dev/projects/amf.js/server.php";
+            var base = "http://localhost.dev/projects/amf.js/server.php";
+            var url = base;
+
+            var serialize = function (data) {
+                var o = new amf._BufferOutputStream();
+                new amf.AMF0Encoder(o, true).encode(data);
+
+                var buf = new ArrayBuffer(o.size);
+                o.writeTo(buf);
+                return buf;
+            };
+
+            var deserialize = function (data) {
+                var input = new amf._BufferInputStream(data);
+
+                var data = new amf.AMF0Decoder(input).decode();
+                return data;
+            };
+
+            var call = function(url, data) {
+                var xhr = new XMLHttpRequest();
+                xhr.addEventListener("load", future, false);
+                xhr.addEventListener("error", future, false);
+
+                xhr.open("POST", url, true);
+                xhr.setRequestHeader("Content-Type", "application/x-amf");
+                xhr.overrideMimeType("text/plain; charset=x-user-defined");
+                xhr.responseType = "arraybuffer";
+
+                xhr.send(data);
+            };
+
+            var guy = {name: 'Danny'};
+            var bro = {name: 'Brad'};
+            var siblings = [guy, bro];
+            guy.siblings = siblings;
+
+            var tests = [
+                // strings
+                ['empty string', ''],
+                ['ascii string', 'Hello World'],
+                ['unicode string', '£今\u4ECA"\u65E5日'],
+                // numbers
+                ['zero', 0 ],
+                ['integer in 1 byte u29 range', 0x7F ],
+                ['integer in 2 byte u29 range', 0x00003FFF ],
+                ['integer in 3 byte u29 range', 0x001FFFFF ],
+                ['integer in 4 byte u29 range', 0x1FFFFFFF ],
+                ['large integer', 4294967296 ],
+                ['large negative integer', -4294967296 ],
+                ['small negative integer', -1 ],
+                ['medium negative integer', -1956 ],
+                ['small floating point', 0.123456789 ],
+                ['small negative floating point', -0.987654321 ],
+                ['Number.MIN_VALUE', Number.MIN_VALUE ],
+                ['Number.MAX_VALUE', Number.MAX_VALUE ],
+                ['Number.POSITIVE_INFINITY', Number.POSITIVE_INFINITY ],
+                ['Number.NEGATIVE_INFINITY', Number.NEGATIVE_INFINITY ],
+                ['Number.NaN', Number.NaN],
+                // other scalars
+                ['Boolean false', false],
+                ['Boolean true', true ],
+                ['undefined', undefined ],
+                ['null', null],
+                // Arrays
+                ['empty array', [] ],
+                ['sparse array', [undefined, undefined, undefined, undefined, undefined, undefined] ],
+                ['multi-dimensional array', [
+                    [
+                        [],
+                        []
+                    ],
+                    []
+                ] ],
+                // special objects
+                ['date object (epoch)', new Date(0) ],
+                ['date object (now)', new Date() ],
+                // plain objects
+                ['empty object', {} ],
+                ['keyed object', { foo: 'bar', 'foo bar': 'baz' } ],
+                ['circular object', guy ]
+            ];
+
+            for(var i in tests) {
+                console.log('sending', tests[i][1]);
+                var s = serialize({data:tests[i][1], created:Date.now()});
+//                console.log(deserialize(s));
+                url = base + "?target=" + inspect(tests[i][1]);
+
+                call(url, s);
+            }
+
+//            send the whole fucker
+            call(url, serialize({data:tests, biggun:true}));
+
+            return;
 
             var connection = new amf.AMFConnection(url, 3);
             connection.addEventListener("fault", function(event) {
@@ -21,77 +121,29 @@
                 log(event.cause);
             }
 
-            var future = connection.execute("myMath.sum", [1, 2]);
+            var future = connection.execute("RoundtripService.sum", [1, 2]);
             future.onresult = function(event) {
                 alert("1 + 2 = " + event.result);
             }
 
-            var obj = {
-                $alias: "com.foo.Obj",
-                message: "hello"
-            }
-            connection.execute("echo.echo", [obj]).onresult = function(event) {
-                alert(event.result + " from server!");
-            }
-
-            return;
-
-            var serialize = function (data) {
-                var serializer = new AMFSerializer(amf.AMF3);
-                return serializer.writeValue(data);
+            var solipsism = {
+                name: 'Danny'
             };
+            solipsism.known = solipsism;
 
-            function ab2str(buf) {
-                return String.fromCharCode.apply(null, new Uint16Array(buf));
+            /***
+             *
+             * FIND WAY OF DESERIALIZING DATA FAITHFULLY FOR CIRCULAR REFS
+             *
+             *
+             *
+             * @param event
+             */
+
+            connection.execute("RoundtripService.complex", [solipsism]).onresult = function(event) {
+                debugger;
+//                alert(event.result + " from server!");
             }
-
-            function str2ab(str) {
-                var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
-                var bufView = new Uint16Array(buf);
-                for (var i=0, strLen=str.length; i<strLen; i++) {
-                    bufView[i] = str.charCodeAt(i);
-                }
-                return buf;
-            }
-
-//            var d = serialize({hi:'greetings!'});
-//            console.log(d, Base64.encodeByteArray());
-
-//            var d2 = str2ab(d);
-
-            var Packet = amf.packet();
-
-            // add a simple header with a name and string value
-//            Packet.addHeader( 'header 1', 'Example header 1' );
-//            Packet.addHeader( 'header 2', 'Example header 2' );
-
-            // Dummy request/response URIs
-            var requestURI = '/1/onResult';
-            var responseURI = '/1';
-
-            // add construct as a single AMF message and return serialized, binary string
-//            for( var t = 0, n = 0; t < tests.length; t++ ){
-//                var struct = {};
-//                var descr = tests[t][0];
-//                var value = tests[t][1];
-//                struct[descr] = value;
-//            }
-
-
-            Packet.addMessage( {hi: serialize('hello world')}, requestURI, responseURI );
-
-            // dump test packet in hex display
-            var bin = Packet.serialize();
-
-            debugger;
-
-            $.ajax({
-                url: "http://localhost.dev/projects/amf.js/server.php",
-                type: "POST",
-                data: bin,
-                contentType:'application/x-amf',
-                processData: false
-            });
         })();
     </script>
 </head>
