@@ -25,15 +25,10 @@ function handleError($errno, $errstr, $errfile, $errline, array $errcontext)
 }
 
 set_error_handler('handleError');
-header('Content-Type: text/html;charset=utf-8');
-
-
-if($_GET['target'] == '-1956') {
-    xdebug_break();
-}
+header('Content-Type: application/x-amf;charset=utf-8');
 
 try {
-    $d = amf3_decode(substr($data, 1));
+    $d = amf3_decode($data);
 } catch (ErrorException $e) {
     return;
 }
@@ -41,4 +36,7 @@ try {
 //        continue;
 //    }
 
-echo print_r($d, true) . "\n";
+//echo print_r($d, true) . "\n";
+
+//if($d['t'] == 'circular object') xdebug_break();
+echo amf3_encode($d, AMF3_FORCE_OBJECT);

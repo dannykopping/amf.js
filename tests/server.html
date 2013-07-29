@@ -13,14 +13,14 @@
 
 
     <script type="text/javascript">
-        (function() {
+        (function () {
 
             var base = "http://localhost.dev/projects/amf.js/server.php";
             var url = base;
 
             var serialize = function (data) {
                 var o = new amf._BufferOutputStream();
-                new amf.AMF0Encoder(o, true).encode(data);
+                new amf.AMF3Encoder(o, true).encode(data);
 
                 var buf = new ArrayBuffer(o.size);
                 o.writeTo(buf);
@@ -30,13 +30,21 @@
             var deserialize = function (data) {
                 var input = new amf._BufferInputStream(data);
 
-                var data = new amf.AMF0Decoder(input).decode();
+                var data = new amf.AMF3Decoder(input).decode();
                 return data;
             };
 
-            var call = function(url, data) {
+            var call = function (url, data) {
                 var xhr = new XMLHttpRequest();
-                xhr.addEventListener("load", future, false);
+                xhr.addEventListener("load", function(event) {
+                    var xhr = event.currentTarget;
+                    var input = new amf._BufferInputStream(amf.readBufferFromXHR(xhr));
+                    var data = new amf.AMF3Decoder(input).decode();
+                    console.log(">>>", data);
+
+//                    console.log(input.readBytes(input.byteLength - 1));
+//                    console.log(xhr.response, deserialize(xhr.response), deserialize(amf.readBufferFromXHR(xhr)));
+                }, false);
                 xhr.addEventListener("error", future, false);
 
                 xhr.open("POST", url, true);
@@ -98,31 +106,40 @@
                 ['circular object', guy ]
             ];
 
-            for(var i in tests) {
+            var rand = '';
+            for(var i = 0; i < 1024 * 1024; i++) {
+                rand += String.fromCharCode(65);
+            }
+
+            tests.push(['large string', rand]);
+
+            for (var i in tests) {
                 console.log('sending', tests[i][1]);
-                var s = serialize({data:tests[i][1], created:Date.now()});
+                var s = serialize( {packet: tests[i][1] } );
 //                console.log(deserialize(s));
-                url = base + "?target=" + inspect(tests[i][1]);
+                url = base + "?target=" + inspect(tests[i][1]).substr(0, 200);
 
                 call(url, s);
             }
 
+
+
 //            send the whole fucker
-            call(url, serialize({data:tests, biggun:true}));
+//            call(url, serialize({data: tests, biggun: true}));
 
             return;
 
             var connection = new amf.AMFConnection(url, 3);
-            connection.addEventListener("fault", function(event) {
+            connection.addEventListener("fault", function (event) {
                 log(event.cause);
                 event.stopPropagation();
             }, true);
-            connection.onerror = function(event) {
+            connection.onerror = function (event) {
                 log(event.cause);
             }
 
             var future = connection.execute("RoundtripService.sum", [1, 2]);
-            future.onresult = function(event) {
+            future.onresult = function (event) {
                 alert("1 + 2 = " + event.result);
             }
 
@@ -140,7 +157,7 @@
              * @param event
              */
 
-            connection.execute("RoundtripService.complex", [solipsism]).onresult = function(event) {
+            connection.execute("RoundtripService.complex", [solipsism]).onresult = function (event) {
                 debugger;
 //                alert(event.result + " from server!");
             }
