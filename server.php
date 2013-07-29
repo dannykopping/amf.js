@@ -28,9 +28,9 @@ set_error_handler('handleError');
 header('Content-Type: application/x-amf;charset=utf-8');
 
 try {
-    $d = amf3_decode($data);
+    $d = amf3_decode($data, $count, AMF3_CLASS_MAP | AMF3_CLASS_CONSTRUCT);
 } catch (ErrorException $e) {
-    return;
+//    return;
 }
 //    if(strlen($php_errormsg)) {
 //        continue;
@@ -40,3 +40,14 @@ try {
 
 //if($d['t'] == 'circular object') xdebug_break();
 echo amf3_encode($d, AMF3_FORCE_OBJECT);
+
+class_alias('StrictType', 'com.flowsa.bob');
+
+class StrictType
+{
+    public $data;
+    public $message = 'yay!';
+
+    public function __construct() {
+    }
+}

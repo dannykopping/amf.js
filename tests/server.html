@@ -8,6 +8,7 @@
     <!--<script src="../lib/binary.js"></script>-->
     <script src="../vendor/hashmap/hashmap.js"></script>
     <script src="../lib/inspect.js"></script>
+    <script src="../lib/class.js"></script>
     <script src="../lib/alt.js"></script>
     <script src="../lib/amf.js"></script>
 
@@ -36,7 +37,7 @@
 
             var call = function (url, data) {
                 var xhr = new XMLHttpRequest();
-                xhr.addEventListener("load", function(event) {
+                xhr.addEventListener("load", function (event) {
                     var xhr = event.currentTarget;
                     var input = new amf._BufferInputStream(amf.readBufferFromXHR(xhr));
                     var data = new amf.AMF3Decoder(input).decode();
@@ -59,6 +60,13 @@
             var bro = {name: 'Brad'};
             var siblings = [guy, bro];
             guy.siblings = siblings;
+
+            var StrictType = Class.extend({
+                $alias: "com.flowsa.bob"
+            });
+
+            var typedObj = new StrictType();
+            typedObj.data = {swearWord: "Mugabe"};
 
             var tests = [
                 // strings
@@ -103,11 +111,13 @@
                 // plain objects
                 ['empty object', {} ],
                 ['keyed object', { foo: 'bar', 'foo bar': 'baz' } ],
-                ['circular object', guy ]
+                ['circular object', guy ],
+                ['class mapping', typedObj ]
             ];
 
+            // 512k string
             var rand = '';
-            for(var i = 0; i < 1024 * 1024; i++) {
+            for (var i = 0; i < 1024 * 512; i++) {
                 rand += String.fromCharCode(65);
             }
 
@@ -115,13 +125,12 @@
 
             for (var i in tests) {
                 console.log('sending', tests[i][1]);
-                var s = serialize( {packet: tests[i][1] } );
+                var s = serialize({packet: tests[i][1] });
 //                console.log(deserialize(s));
                 url = base + "?target=" + inspect(tests[i][1]).substr(0, 200);
 
                 call(url, s);
             }
-
 
 
 //            send the whole fucker
