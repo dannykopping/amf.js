@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title></title>
+
+    <script type="text/javascript">
+        exports = {};
+    </script>
+
     <script src="../vendor/jquery/jquery.min.js"></script>
     <script src="../vendor/hashmap/hashmap.js"></script>
     <script src="../lib/class.js"></script>
@@ -63,11 +68,11 @@
                 xhr.send(data);
             };
 
-            for (var i in tests) {
-                console.log('sending', tests[i][1]);
-                var s = serialize({packet: tests[i][1] });
+            for (var i in exports.data) {
+                console.log('sending', exports.data[i][1]);
+                var s = serialize({packet: exports.data[i][1] });
 //                console.log(deserialize(s));
-                url = base + "?target=" + inspect(tests[i][1]).substr(0, 200);
+                url = base + "?target=" + inspect(exports.data[i][1]).substr(0, 200);
 
                 call(url, s);
             }

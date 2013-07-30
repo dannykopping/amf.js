@@ -1,18 +1,15 @@
-for (var i = 0; i < tests.length; i++) (function (i) {
-  var testData = tests[i];
-  var description = testData[0];
-  var value = testData[1];
+//
+var tape = require('tape');
 
-  test(description, function () {
-    console.log(i, description, value);
+//
+var classExt = require('../lib/class.js');
+var sample = require('./sample-data.js');
+var lib = require('../lib/amf.js');
+lib.HashMap = require('../vendor/hashmap/hashmap.js').HashMap;
+console.log(lib);
+return;
 
-//    if(i == tests.length - 1) {
-//    var s = serialize(value);
-//      return;
-//    }
-    ok(roundtrip(value));
-  });
-})(i);
+var inspect = require('inspect');
 
 var roundtrip = function (data) {
   var serialized = serialize(data);
@@ -25,8 +22,8 @@ var roundtrip = function (data) {
 };
 
 var serialize = function (data) {
-  var o = new amf._BufferOutputStream();
-  new amf.AMF3Encoder(o, true).encode(data);
+  var o = new lib.amf._BufferOutputStream();
+  new lib.amf.AMF3Encoder(o, true).encode(data);
 
   var buf = new ArrayBuffer(o.size);
   o.writeTo(buf);
@@ -34,8 +31,26 @@ var serialize = function (data) {
 };
 
 var deserialize = function (data) {
-  var input = new amf._BufferInputStream(data);
+  var input = new lib.amf._BufferInputStream(data);
 
-  var data = new amf.AMF3Decoder(input).decode();
+  var data = new lib.amf.AMF3Decoder(input).decode();
   return data;
 };
+
+for (var i = 0; i < sample.data.length; i++) (function (i) {
+  var testData = sample.data[i];
+  var description = testData[0];
+  var value = testData[1];
+
+//  test(description, function () {
+//    console.log(i, description, value);
+
+//    if(i == tests.length - 1) {
+//    var s = serialize(value);
+//      return;
+//    }
+  console.log(">>", value, serialize(value));
+  return 1;
+//    roundtrip(value);
+//  });
+})(i);
